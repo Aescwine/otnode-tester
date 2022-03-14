@@ -1,0 +1,16 @@
+#/lib/systemd/system/otnode.service
+
+[Unit]
+Description=OriginTrail Node Tester
+Documentation=TBC
+After=otnode.service graphdb.service blazegraph.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/dev/otnode-tester
+ExecStart=/usr/bin/node /root/dev/otnode-tester/index.js
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

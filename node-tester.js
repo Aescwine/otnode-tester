@@ -38,13 +38,15 @@ class NodeTester {
                     console.log(error);
                 })
 
-                await this.sleepForMilliseconds(15 * 1000); // sleep for 15 seconds
+                await this.sleepForMilliseconds(30 * 1000); // sleep for 30 seconds
 
                 let publishedData = await this.getProvisionResult(publishHandlerId).then(provisionResult => {
                     this.logger.debug(`Provision result received: ${provisionResult.data}`);
 
                     return provisionResult.data;
                 });
+
+                this.logger.debug(`Provision result status: ${publishedData.status}`);
 
                 let assertionId = publishedData.data.id;
                 let ual = publishedData.data.metadata.UALs[0];
