@@ -8,8 +8,8 @@ After=otnode.service graphdb.service blazegraph.service
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/root/dev/otnode-tester
-ExecStart=/usr/bin/node /root/dev/otnode-tester/index.js
+WorkingDirectory=/root/otnode-tester
+ExecStart=/usr/bin/node /root/otnode-tester/index.js
 Restart=on-failure
 
 [Install]

@@ -79,16 +79,18 @@ class NodeTester {
                                     '}' +
                                   '}';
 
+                this.logger.debug(`Sparql query: ${sparqlQuery}`);
                 for (let i = 0; i < 1000; i++) {
                     this.queryRequest({ query: sparqlQuery }, i + 1);
                     await this.sleepForMilliseconds(750); // sleep for half a second
                 }
 
-                let proofQuery = `["<did:dkg:${assertionId}> <http://schema.org/hasKeywords> \"${keyword}\" ."]`;
+                let proofQuery = `["<did:dkg:${assertionId}> <http://schema.org/hasKeywords> \\"${keyword}\\" ."]`;
 
+                this.logger.debug(`Proofs query: ${proofQuery}`);
                 for (let i = 0; i < 50; i++) {
                     this.proofsRequest({ nquads: proofQuery }, i + 1);
-                    await this.sleepForMilliseconds(10 * 1000); // sleep for 10 seconds
+                    await this.sleepForMilliseconds(5 * 1000); // sleep for 5 seconds
                 }
 
                 await this.sleepForMilliseconds(60 * 1000); // sleep for 1 minute
@@ -210,7 +212,7 @@ class NodeTester {
         this.logger.debug(`Sending get proofs request number ${requestNumber}. ${new Date().toGMTString()}`);
         const form = new FormData();
         let nquads = options.nquads;
-        form.append("nquads", JSON.stringify(nquads));
+        form.append("nquads", nquads);
         let axios_config = {
             method: "post",
             url: `${this.nodeBaseUrl}/proofs:get`,
