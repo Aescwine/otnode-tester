@@ -15,10 +15,18 @@ class NodeTester {
 
     async run() {
 
-        await this.sendNodeInfoRequest().then((result) => console.log(result.data))
-            .catch((error) => {
-                throw new Error(`Endpoint not available: ${error}`);
+        let running = false;
+
+        while (!running) {
+            await this.sendNodeInfoRequest().then((result) => {
+                console.log(result.data);
+                running = true;
+            }).catch((error) => {
+                this.logger.error(`Endpoint not available: ${error}. Waiting 3 minutes before trying again.`);
             });
+
+            await this.sleepForMilliseconds(3 * 60 * 1000); // sleep for 3 minutes
+        }
 
         while (true) {
             let keyword = 'keyword' + randomstring.generate(5);
@@ -72,12 +80,12 @@ class NodeTester {
                 this.logger.debug(`Sparql query for keyword ${keyword}`);
 
                 let sparqlQuery = 'PREFIX schema: <http://schema.org/> ' +
-                                  'CONSTRUCT { ?s schema:hasKeywords "' + keyword + '". } ' +
-                                  'WHERE { ' +
-                                    'GRAPH ?g { ' +
-                                      '?s schema:hasKeywords "' + keyword + '" . ' +
-                                    '}' +
-                                  '}';
+                    'CONSTRUCT { ?s schema:hasKeywords "' + keyword + '". } ' +
+                    'WHERE { ' +
+                    'GRAPH ?g { ' +
+                    '?s schema:hasKeywords "' + keyword + '" . ' +
+                    '}' +
+                    '}';
 
                 this.logger.debug(`Sparql query: ${sparqlQuery}`);
                 for (let i = 0; i < 1000; i++) {
