@@ -23,9 +23,8 @@ class NodeTester {
                 running = true;
             }).catch((error) => {
                 this.logger.error(`Endpoint not available: ${error}. Waiting 3 minutes before trying again.`);
+                this.sleepForMilliseconds(3 * 60 * 1000); // sleep for 3 minutes
             });
-
-            await this.sleepForMilliseconds(3 * 60 * 1000); // sleep for 3 minutes
         }
 
         while (true) {
@@ -54,7 +53,13 @@ class NodeTester {
                     return provisionResult.data;
                 });
 
-                this.logger.debug(`Provision result status: ${publishedData.status}`);
+                let provisionStatus = publishedData.status;
+                this.logger.debug(`Provision result status: ${provisionStatus}`);
+
+                // this is a hack due to a bug in otnode when status is PENDING
+                if (provisionStatus == 'PENDING') {
+                    publishedData.data = JSON.parse(publishedData.data);
+                }
 
                 let assertionId = publishedData.data.id;
                 let ual = publishedData.data.metadata.UALs[0];
