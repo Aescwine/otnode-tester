@@ -16,6 +16,7 @@ class NodeTester {
     async run() {
 
         let running = false;
+        let i = 0;
 
         while (!running) {
             await this.sendNodeInfoRequest().then((result) => {
@@ -38,6 +39,7 @@ class NodeTester {
             }
 
             try {
+                this.logger.debug(`Sending publish request number ${i}. ${new Date().toGMTString()}`);
                 let publishHandlerId = await this.publishRequest(publishOptions).then(result => {
                     this.logger.debug(`Publish complete. Handler id: ${result.data.handler_id}`);
                     return result.data.handler_id;
@@ -56,31 +58,26 @@ class NodeTester {
                 let provisionStatus = publishedData.status;
                 this.logger.debug(`Provision result status: ${provisionStatus}`);
 
-                // this is a hack due to a bug in otnode when status is PENDING
-                if (provisionStatus == 'PENDING') {
-                    publishedData.data = JSON.parse(publishedData.data);
-                }
-
                 let assertionId = publishedData.data.id;
                 let ual = publishedData.data.metadata.UALs[0];
 
                 this.logger.debug(`Resolve UAL ${ual}`);
-                for (let i = 0; i < 500; i++) {
-                    this.resolveRequest(ual, i + 1);
-                    await this.sleepForMilliseconds(750); // sleep for half a second
-                }
+
+                this.logger.debug(`Sending resolve request number ${i}. ${new Date().toGMTString()}`);
+                this.resolveRequest(ual);
+                await this.sleepForMilliseconds(5 * 1000); // sleep for 5 seconds
 
                 this.logger.debug(`Entity search for keyword ${keyword}`);
-                for (let i = 0; i < 100; i++) {
-                    this.searchRequest({ query: keyword, resultType: "entities" }, i + 1);
-                    await this.sleepForMilliseconds(1000); // sleep for 1 second
-                }
+
+                this.logger.debug(`Sending entity search request number ${i}. ${new Date().toGMTString()}`);
+                this.searchRequest({ query: keyword, resultType: "entities" });
+                await this.sleepForMilliseconds(5 * 1000); // sleep for 5 seconds
 
                 this.logger.debug(`Assertion search for keyword ${keyword}`);
-                for (let i = 0; i < 100; i++) {
-                    this.searchRequest({ query: keyword, resultType: "assertions" }, i + 1);
-                    await this.sleepForMilliseconds(1000); // sleep for 1 second
-                }
+
+                this.logger.debug(`Sending assertion search request number ${i}. ${new Date().toGMTString()}`);
+                this.searchRequest({ query: keyword, resultType: "assertions" });
+                await this.sleepForMilliseconds(5 * 1000); // sleep for 5 seconds
 
                 this.logger.debug(`Sparql query for keyword ${keyword}`);
 
@@ -93,21 +90,18 @@ class NodeTester {
                     '}';
 
                 this.logger.debug(`Sparql query: ${sparqlQuery}`);
-                for (let i = 0; i < 1000; i++) {
-                    this.queryRequest({ query: sparqlQuery }, i + 1);
-                    await this.sleepForMilliseconds(750); // sleep for half a second
-                }
+
+                this.logger.debug(`Sending query request number ${i}. ${new Date().toGMTString()}`);
+                this.queryRequest({ query: sparqlQuery });
+                await this.sleepForMilliseconds(5 * 1000); // sleep for 5 seconds
 
                 let proofQuery = `["<did:dkg:${assertionId}> <http://schema.org/hasKeywords> \\"${keyword}\\" ."]`;
 
                 this.logger.debug(`Proofs query: ${proofQuery}`);
-                for (let i = 0; i < 50; i++) {
-                    this.proofsRequest({ nquads: proofQuery }, i + 1);
-                    await this.sleepForMilliseconds(5 * 1000); // sleep for 5 seconds
-                }
-
-                await this.sleepForMilliseconds(60 * 1000); // sleep for 1 minute
-
+                this.logger.debug(`Sending get proofs request number ${i}. ${new Date().toGMTString()}`);
+                this.proofsRequest({ nquads: proofQuery });
+                
+                i++;
             } catch (e) {
                 this.logger.error(e);
             }
@@ -126,7 +120,6 @@ class NodeTester {
     }
 
     async publishRequest(options) {
-        this.logger.debug(`Sending publish request. ${new Date().toGMTString()}`);
         const form = new FormData();
         if (options.filepath) {
             form.append("file", fs.createReadStream(options.filepath));
@@ -162,12 +155,28 @@ class NodeTester {
                 ...form.getHeaders(),
             },
         };
+        let retries = 0;
+        let status = 'PENDING';
+        let response = null;
+        while (status === 'PENDING') {
+            if (retries > 3) {
+                throw Error("Unable to get results. Max number of retries reached.");
+            }
+            retries++;
+            await this.sleepForMilliseconds(10 * 1000);
+            try {
+                response = await axios(axios_config);
+                status = response.data.status;
+            } catch (e) {
+                this.logger.error(e);
+                throw e;
+            }
+        }
 
-        return axios(axios_config);
+        return response;
     }
 
-    resolveRequest(ual, requestNumber = 1) {
-        this.logger.debug(`Sending resolve request number ${requestNumber}. ${new Date().toGMTString()}`);
+    resolveRequest(ual) {
         const form = new FormData();
         let ids = `ids=${ual}`;
 
@@ -182,8 +191,7 @@ class NodeTester {
         return axios(axios_config);
     }
 
-    searchRequest(options, requestNumber = 1) {
-        this.logger.debug(`Sending search request number ${requestNumber}. ${new Date().toGMTString()}`);
+    searchRequest(options) {
         const form = new FormData();
         let query = options.query;
         let resultType = options.resultType;
@@ -199,8 +207,7 @@ class NodeTester {
         return axios(axios_config);
     }
 
-    queryRequest(options, requestNumber = 1) {
-        this.logger.debug(`Sending query request number ${requestNumber}. ${new Date().toGMTString()}`);
+    queryRequest(options) {
         const form = new FormData();
         let type = options.type ? options.type : "construct";
         let sparqlQuery = options.query;
@@ -222,7 +229,6 @@ class NodeTester {
     }
 
     proofsRequest(options, requestNumber = 1) {
-        this.logger.debug(`Sending get proofs request number ${requestNumber}. ${new Date().toGMTString()}`);
         const form = new FormData();
         let nquads = options.nquads;
         form.append("nquads", nquads);
