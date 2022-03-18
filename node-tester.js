@@ -16,7 +16,7 @@ class NodeTester {
     async run() {
 
         let running = false;
-        let i = 0;
+        let i = 1;
 
         while (!running) {
             await this.sendNodeInfoRequest().then((result) => {
