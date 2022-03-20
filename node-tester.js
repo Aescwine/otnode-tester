@@ -184,6 +184,10 @@ class NodeTester {
             }
         }
 
+        if (status === 'FAILED') {
+            throw Error("Error occurred provisioning asset", response.data);
+        }
+
         return response;
     }
 
