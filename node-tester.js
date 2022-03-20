@@ -22,9 +22,9 @@ class NodeTester {
             await this.sendNodeInfoRequest().then((result) => {
                 console.log(result.data);
                 running = true;
-            }).catch((error) => {
+            }).catch(async (error) => {
                 this.logger.error(`Endpoint not available: ${error}. Waiting 3 minutes before trying again.`);
-                this.sleepForMilliseconds(3 * 60 * 1000); // sleep for 3 minutes
+                await this.sleepForMilliseconds(3 * 60 * 1000); // sleep for 3 minutes
             });
         }
 
@@ -62,22 +62,26 @@ class NodeTester {
                 let ual = publishedData.data.metadata.UALs[0];
 
                 this.logger.debug(`Resolve UAL ${ual}`);
-
-                this.logger.debug(`Sending resolve request number ${i}. ${new Date().toGMTString()}`);
-                this.resolveRequest(ual);
-                await this.sleepForMilliseconds(5 * 1000); // sleep for 5 seconds
+                for (let i = 0; i < 10; i++) {
+                    this.logger.debug(`Sending resolve request number ${i+1}. ${new Date().toGMTString()}`);
+                    this.resolveRequest(ual);
+                    await this.sleepForMilliseconds(7.5 * 1000); // sleep for 7.5 seconds
+                }
 
                 this.logger.debug(`Entity search for keyword ${keyword}`);
-
-                this.logger.debug(`Sending entity search request number ${i}. ${new Date().toGMTString()}`);
-                this.searchRequest({ query: keyword, resultType: "entities" });
-                await this.sleepForMilliseconds(5 * 1000); // sleep for 5 seconds
+                for (let i = 0; i < 10; i++) {
+                    this.logger.debug(`Sending entity search request number ${i+1}. ${new Date().toGMTString()}`);
+                    this.searchRequest({ query: keyword, resultType: "entities" });
+                    await this.sleepForMilliseconds(7.5 * 1000); // sleep for 7.5 seconds
+                }
 
                 this.logger.debug(`Assertion search for keyword ${keyword}`);
+                for (let i = 0; i < 10; i++) {
+                    this.logger.debug(`Sending assertion search request number ${i+1}. ${new Date().toGMTString()}`);
+                    this.searchRequest({ query: keyword, resultType: "assertions" });
+                    await this.sleepForMilliseconds(7.5 * 1000); // sleep for 7.5 seconds
 
-                this.logger.debug(`Sending assertion search request number ${i}. ${new Date().toGMTString()}`);
-                this.searchRequest({ query: keyword, resultType: "assertions" });
-                await this.sleepForMilliseconds(5 * 1000); // sleep for 5 seconds
+                }
 
                 this.logger.debug(`Sparql query for keyword ${keyword}`);
 
@@ -90,17 +94,24 @@ class NodeTester {
                     '}';
 
                 this.logger.debug(`Sparql query: ${sparqlQuery}`);
+                for (let i = 0; i < 10; i++) {
+                    this.logger.debug(`Sending query request number ${i+1}. ${new Date().toGMTString()}`);
+                    this.queryRequest({ query: sparqlQuery });
+                    await this.sleepForMilliseconds(7.5 * 1000); // sleep for 7.5 seconds
 
-                this.logger.debug(`Sending query request number ${i}. ${new Date().toGMTString()}`);
-                this.queryRequest({ query: sparqlQuery });
-                await this.sleepForMilliseconds(5 * 1000); // sleep for 5 seconds
+                }
 
                 let proofQuery = `["<did:dkg:${assertionId}> <http://schema.org/hasKeywords> \\"${keyword}\\" ."]`;
-
                 this.logger.debug(`Proofs query: ${proofQuery}`);
-                this.logger.debug(`Sending get proofs request number ${i}. ${new Date().toGMTString()}`);
-                this.proofsRequest({ nquads: proofQuery });
-                
+
+                for (let i = 0; i < 10; i++) {                    
+                    this.logger.debug(`Sending get proofs request number ${i+1}. ${new Date().toGMTString()}`);
+                    this.proofsRequest({ nquads: proofQuery });
+                    await this.sleepForMilliseconds(10 * 1000); // sleep for 10 seconds
+                }
+
+                await this.sleepForMilliseconds(30 * 1000); // sleep for 30 seconds
+
                 i++;
             } catch (e) {
                 this.logger.error(e);
