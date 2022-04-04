@@ -47,7 +47,7 @@ class NodeTester {
                     console.log(error);
                 })
 
-                await this.sleepForMilliseconds(30 * 1000); // sleep for 30 seconds
+                await this.sleepForMilliseconds(60 * 1000); // sleep for 60 seconds
 
                 let publishedData = await this.getProvisionResult(publishHandlerId).then(provisionResult => {
                     this.logger.debug(`Provision result received: ${provisionResult.data}`);
