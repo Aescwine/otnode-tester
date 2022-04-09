@@ -235,7 +235,7 @@ class NodeTester {
         form.append("type", "construct")
         let axios_config = {
             method: "post",
-            url: `${this.nodeBaseUrl}/query`,
+            url: `${this.nodeBaseUrl}/query?type=${type}`,
             headers: {
                 ...form.getHeaders(),
             },
