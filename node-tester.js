@@ -232,9 +232,10 @@ class NodeTester {
             throw new Error(`Sparql query error: ${error}`);
         }
         form.append("query", sparqlQuery);
+        form.append("type", "construct")
         let axios_config = {
             method: "post",
-            url: `${this.nodeBaseUrl}/query?type=${type}`,
+            url: `${this.nodeBaseUrl}/query`,
             headers: {
                 ...form.getHeaders(),
             },
